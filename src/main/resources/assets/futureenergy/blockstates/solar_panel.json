@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "futureenergy:block/solar_panel"
+    }
+  }
+}

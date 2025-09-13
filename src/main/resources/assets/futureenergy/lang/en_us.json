@@ -2,6 +2,16 @@
   "itemGroup.futureenergy": "Future Energy",
 
   "block.futureenergy.example_block": "Example Block",
+  "block.futureenergy.cable_port": "Cable Port",
+  "block.futureenergy.solar_panel": "Solar Panel",
+  "block.futureenergy.electric_furnace": "Electric Furnace",
 
-  "item.futureenergy.example_item": "Example Item"
+  "item.futureenergy.example_item": "Example Item",
+  "item.futureenergy.cable": "Electric Cable",
+  "item.futureenergy.cable.tooltip.usage": "Right-click on cable ports to connect them",
+  "item.futureenergy.cable.tooltip.max_length": "Max connection distance: %d blocks",
+  "item.futureenergy.cable.tooltip.durability": "Remaining length: %d/%d",
+  "item.futureenergy.cable.tooltip.connected": "Click on another port to complete connection",
+  "message.futureenergy.wire_coil.too_long": "Connection distance too long! Maximum: %d blocks",
+  "container.futureenergy.electric_furnace": "Electric Furnace"
 }

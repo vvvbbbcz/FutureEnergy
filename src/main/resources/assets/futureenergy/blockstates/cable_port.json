@@ -1,0 +1,27 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "futureenergy:block/cable_port"
+    },
+    "facing=south": {
+      "model": "futureenergy:block/cable_port",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "futureenergy:block/cable_port",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "futureenergy:block/cable_port",
+      "y": 90
+    },
+    "facing=up": {
+      "model": "futureenergy:block/cable_port",
+      "x": 270
+    },
+    "facing=down": {
+      "model": "futureenergy:block/cable_port",
+      "x": 90
+    }
+  }
+}

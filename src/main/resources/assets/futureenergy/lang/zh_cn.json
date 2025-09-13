@@ -1,0 +1,17 @@
+{
+  "itemGroup.futureenergy": "未来能源",
+
+  "block.futureenergy.example_block": "示例方块",
+  "block.futureenergy.cable_port": "线缆端口",
+  "block.futureenergy.solar_panel": "太阳能板",
+  "block.futureenergy.electric_furnace": "电炉",
+
+  "item.futureenergy.example_item": "示例物品",
+  "item.futureenergy.cable": "电力线缆",
+  "item.futureenergy.cable.tooltip.usage": "右键点击线缆端口进行连接",
+  "item.futureenergy.cable.tooltip.max_length": "最大连接距离：%d 格",
+  "item.futureenergy.cable.tooltip.durability": "剩余长度：%d/%d",
+  "item.futureenergy.cable.tooltip.connected": "点击另一个端口完成连接",
+  "message.futureenergy.wire_coil.too_long": "连接距离过长！最大距离：%d 格",
+  "container.futureenergy.electric_furnace": "电炉"
+}

@@ -1,5 +1,11 @@
 package net.industrybase.futureenergy;
 
+import net.industrybase.futureenergy.block.entity.BlockEntityTypeList;
+import net.industrybase.futureenergy.client.renderer.CablePortRenderer;
+import net.industrybase.futureenergy.client.screen.ElectricFurnaceScreen;
+import net.industrybase.futureenergy.inventory.MenuTypeList;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -15,5 +21,13 @@ public class FutureEnergyClient {
 
 	@SubscribeEvent
 	static void onClientSetup(FMLClientSetupEvent event) {
+		// 注册方块实体渲染器
+		BlockEntityRenderers.register(BlockEntityTypeList.CABLE_PORT.get(), CablePortRenderer::new);
+	}
+
+	@SubscribeEvent
+	static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
+		// 注册屏幕
+		event.register(MenuTypeList.ELECTRIC_FURNACE.get(), ElectricFurnaceScreen::new);
 	}
 }
