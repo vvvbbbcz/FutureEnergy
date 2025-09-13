@@ -1,9 +1,10 @@
 package net.industrybase.api.util;
 
+import net.industrybase.api.example.block.DynamoBlock;
 import net.industrybase.api.transmit.TransmitNetwork;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class TransmitHelper {
@@ -12,7 +13,14 @@ public class TransmitHelper {
 	}
 
 	/**
-	 * 本方法应在 {@link BlockBehaviour#onRemove} 中调用。
+	 * This method should be called in the onRemove method of block,
+	 * such as {@link DynamoBlock#onRemove(BlockState, Level, BlockPos, BlockState, boolean)}.
+	 * It will check if the state is the same as the new state,
+	 * if not, they will return false and NOT update.
+	 * <p>
+	 * These hooks only take effect when the block state is changed,
+	 * such as when the block direction is changed by
+	 * {@link Level#setBlock(BlockPos, BlockState, int)} or debug stick.
 	 *
 	 * @param level    level
 	 * @param state    old state

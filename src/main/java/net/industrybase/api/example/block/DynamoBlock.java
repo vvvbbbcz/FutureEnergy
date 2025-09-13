@@ -21,6 +21,12 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Example of typical block uses transmit and electric capabilities.
+ * For the corresponding block entity see {@link DynamoBlockEntity}
+ *
+ * @author vvvbbbcz
+ */
 @SuppressWarnings("unused")
 public class DynamoBlock extends BaseEntityBlock {
 	public static final MapCodec<DynamoBlock> CODEC = simpleCodec((properties) -> new DynamoBlock());
@@ -34,10 +40,25 @@ public class DynamoBlock extends BaseEntityBlock {
 
 	@Override
 	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+		/*
+		 * Although these methods are called updateOnRemove,
+		 * they will check if the state is the same as the new state,
+		 * if not, they will return false and NOT update.
+		 *
+		 * These hooks only take effect when the block state is changed,
+		 * such as when the block direction is changed by Level#setBlock or debug stick.
+		 */
 		TransmitHelper.updateOnRemove(level, state, newState, pos);
 		ElectricHelper.updateOnRemove(level, state, newState, pos);
 		super.onRemove(state, level, pos, newState, isMoving);
 	}
+
+	/*
+	 * ===================== Base Codes =====================
+	 *
+	 * Below are base codes of this block,
+	 * they add base features to this base entity block.
+	 */
 
 	@Override
 	protected MapCodec<? extends BaseEntityBlock> codec() {

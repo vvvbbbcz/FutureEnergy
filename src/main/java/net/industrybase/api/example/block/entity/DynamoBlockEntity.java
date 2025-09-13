@@ -14,6 +14,12 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import javax.annotation.Nullable;
 
+/**
+ * Example of typical block entity uses transmit and electric capabilities.
+ * For the corresponding block, see {@link DynamoBlock}.
+ *
+ * @author vvvbbbcz
+ */
 @SuppressWarnings("unused")
 public class DynamoBlockEntity extends BlockEntity {
 	private double oldPower;
@@ -28,21 +34,21 @@ public class DynamoBlockEntity extends BlockEntity {
 	@Override
 	public void onLoad() {
 		super.onLoad();
-		this.transmit.register();
-		this.transmit.setResistance(RESISTANCE);
-		this.electricPower.register();
+		this.transmit.register(); // register to the transmit network
+		this.transmit.setResistance(RESISTANCE); // set init resistance
+		this.electricPower.register(); // register to the electric network
 	}
 
 	public static void serverTick(Level level, BlockPos pos, BlockState state, DynamoBlockEntity blockEntity) {
 		double power = ElectricHelper.fromTransmit(blockEntity.transmit.getSpeed(), RESISTANCE);
-		if (power != blockEntity.oldPower) {
-			blockEntity.electricPower.setOutputPower(power);
+		if (power != blockEntity.oldPower) { // if power changed
+			blockEntity.electricPower.setOutputPower(power); // update power
 			blockEntity.oldPower = power;
 		}
 	}
 
 	@Nullable
-	public MechanicalTransmit getTransmit(Direction side) {
+	public MechanicalTransmit getTransmit(Direction side) { // get transmit capability
 		if (side == this.getBlockState().getValue(DynamoBlock.FACING)) {
 			return this.transmit;
 		}
@@ -50,7 +56,7 @@ public class DynamoBlockEntity extends BlockEntity {
 	}
 
 	@Nullable
-	public ElectricPower getElectricPower(Direction side) {
+	public ElectricPower getElectricPower(Direction side) { // get electric capability
 		if (side == this.getBlockState().getValue(DynamoBlock.FACING).getOpposite()) {
 			return this.electricPower;
 		}
@@ -59,8 +65,8 @@ public class DynamoBlockEntity extends BlockEntity {
 
 	@Override
 	public void setRemoved() {
-		this.transmit.remove();
-		this.electricPower.remove();
+		this.transmit.remove(); // remove from the transmit network
+		this.electricPower.remove(); // remove from the electric network
 		super.setRemoved();
 	}
 
@@ -68,15 +74,15 @@ public class DynamoBlockEntity extends BlockEntity {
 	public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
 		super.loadAdditional(tag, registries);
 		this.oldPower = tag.getDouble("OldPower");
-		this.transmit.readFromNBT(tag);
-		this.electricPower.readFromNBT(tag);
+		this.transmit.readFromNBT(tag); // read data about transmit
+		this.electricPower.readFromNBT(tag); // read data about electric
 	}
 
 	@Override
 	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
 		super.saveAdditional(tag, registries);
 		tag.putDouble("OldPower", this.oldPower);
-		this.transmit.writeToNBT(tag);
-		this.electricPower.writeToNBT(tag);
+		this.transmit.writeToNBT(tag); // write data about transmit
+		this.electricPower.writeToNBT(tag); // write data about electric
 	}
 }
