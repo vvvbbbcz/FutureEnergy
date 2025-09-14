@@ -1,6 +1,8 @@
 package net.industrybase.futureenergy;
 
 import net.industrybase.futureenergy.block.BlockList;
+import net.industrybase.futureenergy.block.entity.BlockEntityTypeList;
+import net.industrybase.futureenergy.inventory.MenuTypeList;
 import net.industrybase.futureenergy.item.CreativeModeTabList;
 import net.industrybase.futureenergy.item.ItemList;
 
@@ -14,6 +16,8 @@ public class FutureEnergy {
 
 	public FutureEnergy(IEventBus modEventBus, ModContainer modContainer) {
 		BlockList.BLOCKS.register(modEventBus);
+		BlockEntityTypeList.BLOCK_ENTITY_TYPE.register(modEventBus);
+		MenuTypeList.MENU_TYPE.register(modEventBus);
 		ItemList.ITEMS.register(modEventBus);
 		CreativeModeTabList.CREATIVE_MODE_TABS.register(modEventBus);
 	}
