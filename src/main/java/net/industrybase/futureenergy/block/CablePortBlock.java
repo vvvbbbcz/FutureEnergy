@@ -9,11 +9,8 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityTicker;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -29,13 +26,6 @@ import org.jetbrains.annotations.Nullable;
 public class CablePortBlock extends BaseEntityBlock {
     public static final MapCodec<CablePortBlock> CODEC = simpleCodec(CablePortBlock::new);
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
-
-    public CablePortBlock() {
-        super(Properties.ofFullCopy(Blocks.IRON_BLOCK)
-                .strength(3.0F, 6.0F)
-                .requiresCorrectToolForDrops());
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-    }
 
     public CablePortBlock(Properties properties) {
         super(properties);
@@ -63,7 +53,7 @@ public class CablePortBlock extends BaseEntityBlock {
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         // 根据玩家放置时的朝向设置方块朝向
-        return this.defaultBlockState().setValue(FACING, context.getNearestLookingDirection().getOpposite());
+        return this.defaultBlockState().setValue(FACING, context.getClickedFace());
     }
 
     @Override
@@ -75,14 +65,5 @@ public class CablePortBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new CablePortBlockEntity(pos, state);
-    }
-
-    @Nullable
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-        // 只在服务端运行ticker
-        return level.isClientSide ? null : createTickerHelper(blockEntityType, 
-                net.industrybase.futureenergy.block.entity.BlockEntityTypeList.CABLE_PORT.get(), 
-                CablePortBlockEntity::serverTick);
     }
 }

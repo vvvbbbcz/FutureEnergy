@@ -1,6 +1,11 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/cube",
   "textures": {
-    "all": "futureenergy:block/cable_port"
+    "up": "futureenergy:block/cable_port_top",
+    "down": "futureenergy:block/cable_port_top",
+    "north": "futureenergy:block/cable_port",
+    "south": "futureenergy:block/cable_port",
+    "east": "futureenergy:block/cable_port",
+    "west": "futureenergy:block/cable_port"
   }
 }
