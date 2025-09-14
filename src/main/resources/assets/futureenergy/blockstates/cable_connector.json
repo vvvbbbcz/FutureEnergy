@@ -1,0 +1,29 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "futureenergy:block/cable_connector",
+      "x": -90
+    },
+    "facing=east": {
+      "model": "futureenergy:block/cable_connector",
+      "x": 90,
+      "y": -90
+    },
+    "facing=south": {
+      "model": "futureenergy:block/cable_connector",
+      "x": 90
+    },
+    "facing=west": {
+      "model": "futureenergy:block/cable_connector",
+      "x": 90,
+      "y": 90
+    },
+    "facing=up": {
+      "model": "futureenergy:block/cable_connector",
+      "x": 180
+    },
+    "facing=down": {
+      "model": "futureenergy:block/cable_connector"
+    }
+  }
+}

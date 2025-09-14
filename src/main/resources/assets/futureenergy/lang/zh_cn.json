@@ -1,0 +1,12 @@
+{
+  "itemGroup.futureenergy": "未来能源",
+
+  "item.futureenergy.cable": "导线",
+
+  "block.futureenergy.cable_connector": "接线端子",
+
+  "itemTooltip.futureenergy.cable.1": "已绑定方块: (%1$s,%2$s,%3$s)",
+  "itemTooltip.futureenergy.cable.2": "该卷导线剩余%1$s米",
+
+  "message.futureenergy.wire_coil.too_long": "距离过长，该卷导线剩余%1$s米"
+}
