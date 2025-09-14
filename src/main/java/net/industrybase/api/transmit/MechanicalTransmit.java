@@ -2,6 +2,7 @@ package net.industrybase.api.transmit;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import net.industrybase.api.energy.IMechanicalTransmit;
+import net.industrybase.api.example.block.entity.DynamoBlockEntity;
 import net.industrybase.api.network.client.UnsubscribeSpeedPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -31,6 +32,8 @@ public class MechanicalTransmit implements IMechanicalTransmit, INBTSerializable
 	/**
 	 * 向传动网络注册该方块。
 	 * 需要在 {@link BlockEntity#onLoad()} 中执行一次。
+	 * <br>
+	 * For usage, see {@link DynamoBlockEntity#onLoad()}
 	 */
 	public void register() {
 		this.level = this.blockEntity.getLevel();
@@ -47,6 +50,8 @@ public class MechanicalTransmit implements IMechanicalTransmit, INBTSerializable
 	/**
 	 * 将此方块从传动网络中移除。
 	 * 在 {@link BlockEntity#setRemoved()} 中执行。
+	 * <br>
+	 * For usage, see {@link DynamoBlockEntity#setRemoved()}
 	 */
 	public void remove() {
 		if (this.level != null) {
