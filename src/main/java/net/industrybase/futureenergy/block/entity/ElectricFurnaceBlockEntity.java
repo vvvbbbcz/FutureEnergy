@@ -1,28 +1,32 @@
 package net.industrybase.futureenergy.block.entity;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import lombok.Getter;
+import lombok.With;
 import net.industrybase.api.electric.ElectricPower;
-import net.industrybase.futureenergy.block.ElectricFurnaceBlock;
 import net.industrybase.futureenergy.inventory.ElectricFurnaceMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.Containers;
 import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.AbstractCookingRecipe;
+import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-
-import net.neoforged.neoforge.energy.EnergyStorage;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,17 +37,36 @@ import org.jetbrains.annotations.Nullable;
  * @author FutureEnergy
  */
 public class ElectricFurnaceBlockEntity extends BaseContainerBlockEntity implements WorldlyContainer {
-	private static final int ENERGY_CAPACITY = 200000;
 	private static final int ENERGY_CONSUMPTION = 20; // FE/t
-	private static final int COOK_TIME_TOTAL = (int) (200 / 1.2); // 1.2x speed = ~167 ticks
 
-	private final ElectricPower electricPower;
-	private final ItemStackHandler itemHandler;
-	private final NonNullList<ItemStack> items;
+	private final ElectricPower electricPower = new ElectricPower(this);
+	private final ItemStackHandler inputHandler = new ItemStackHandler(1);
+	private final ItemStackHandler outputHandler = new ItemStackHandler(1);
 
-	// 熔炼进度
-	private int cookingProgress = 0;
-	private int cookingTotalTime = COOK_TIME_TOTAL;
+	public ItemStackHandler getItemStackHandler(Direction side) {
+		return switch (side) {
+			case DOWN -> outputHandler;
+			case UP -> inputHandler;
+			default -> null;
+		};
+	}
+
+	private final RecipeManager.CachedCheck<SingleRecipeInput, ? extends AbstractCookingRecipe> quickCheck;
+	@Getter
+	private boolean hasEnergy = false;
+
+	private Data data = new Data(0, 0);
+
+	@With
+	public record Data(
+		int cookingProgress,
+		int cookingTotalTime
+	) {
+		public static final Codec<Data> CODEC = RecordCodecBuilder.create(ins -> ins.group(
+			Codec.INT.fieldOf("cookingProgress").forGetter(Data::cookingProgress),
+			Codec.INT.fieldOf("cookingTotalTime").forGetter(Data::cookingTotalTime)
+		).apply(ins, Data::new));
+	}
 
 	// 槽位索引
 	private static final int INPUT_SLOT = 0;
@@ -54,10 +77,9 @@ public class ElectricFurnaceBlockEntity extends BaseContainerBlockEntity impleme
 		@Override
 		public int get(int index) {
 			return switch (index) {
-				case 0 -> ElectricFurnaceBlockEntity.this.cookingProgress;
-				case 1 -> ElectricFurnaceBlockEntity.this.cookingTotalTime;
-				case 2 -> ElectricFurnaceBlockEntity.this.electricPower.getEnergyStored();
-				case 3 -> ElectricFurnaceBlockEntity.this.electricPower.getMaxEnergyStored();
+				case 0 -> ElectricFurnaceBlockEntity.this.data.cookingProgress;
+				case 1 -> ElectricFurnaceBlockEntity.this.data.cookingTotalTime;
+				case 2 -> hasEnergy ? 1 : 0;
 				default -> 0;
 			};
 		}
@@ -65,34 +87,28 @@ public class ElectricFurnaceBlockEntity extends BaseContainerBlockEntity impleme
 		@Override
 		public void set(int index, int value) {
 			switch (index) {
-				case 0 -> ElectricFurnaceBlockEntity.this.cookingProgress = value;
-				case 1 -> ElectricFurnaceBlockEntity.this.cookingTotalTime = value;
+				case 0 -> data = ElectricFurnaceBlockEntity.this.data.withCookingProgress(value);
+				case 1 -> data = ElectricFurnaceBlockEntity.this.data.withCookingTotalTime(value);
+				case 2 -> hasEnergy = value == 1;
 			}
 		}
 
 		@Override
 		public int getCount() {
-			return 4;
+			return 3;
 		}
 	};
 
 	public ElectricFurnaceBlockEntity(BlockPos pos, BlockState blockState) {
 		super(BlockEntityTypeList.ELECTRIC_FURNACE.get(), pos, blockState);
-		this.electricPower = new ElectricPower(this);
-		this.items = NonNullList.withSize(2, ItemStack.EMPTY);
-		this.itemHandler = new ItemStackHandler(2) {
-			@Override
-			protected void onContentsChanged(int slot) {
-				ElectricFurnaceBlockEntity.this.setChanged();
-			}
-		};
+		this.quickCheck = RecipeManager.createCheck(RecipeType.SMELTING);
 	}
 
 	@Override
 	public void onLoad() {
 		super.onLoad();
 		this.electricPower.register();
-		this.electricPower.setInputPower(20);
+		this.electricPower.setInputPower(ENERGY_CONSUMPTION);
 	}
 
 	@Override
@@ -104,92 +120,41 @@ public class ElectricFurnaceBlockEntity extends BaseContainerBlockEntity impleme
 	public static void serverTick(Level level, BlockPos pos, BlockState state, ElectricFurnaceBlockEntity blockEntity) {
 		if (level.isClientSide) return;
 
-		boolean wasLit = state.getValue(ElectricFurnaceBlock.LIT);
-		boolean isLit = false;
-
-		// 检查是否可以熔炼
-		if (blockEntity.canSmelt()) {
+		var smeltingRecipe = blockEntity.quickCheck.getRecipeFor(
+			new SingleRecipeInput(blockEntity.inputHandler.getStackInSlot(0)),
+			level
+		);
+		blockEntity.hasEnergy = blockEntity.electricPower.getRealInput() >= ENERGY_CONSUMPTION;
+		smeltingRecipe.ifPresentOrElse(recipeHolder -> {
 			// 检查是否有足够的能量
-			if (blockEntity.electricPower.getRealInput() >= ENERGY_CONSUMPTION) {
+			if (blockEntity.hasEnergy) {
 				// 增加熔炼进度
-				blockEntity.cookingProgress++;
-				isLit = true;
+				int cookingTime = (int) (recipeHolder.value().getCookingTime() / 1.2);
+				blockEntity.data = blockEntity.data.withCookingProgress(blockEntity.data.cookingProgress + 1)
+					.withCookingTotalTime(cookingTime);
 
 				// 完成熔炼
-				if (blockEntity.cookingProgress >= blockEntity.cookingTotalTime) {
-					blockEntity.smeltItem();
-					blockEntity.cookingProgress = 0;
+				if (blockEntity.data.cookingProgress >= cookingTime) {
+					blockEntity.inputHandler.extractItem(0, 1, false);
+					blockEntity.outputHandler.insertItem(0, recipeHolder.value().getResultItem(level.registryAccess()).copy(), false);
+					blockEntity.data = blockEntity.data.withCookingProgress(0);
 				}
 			}
-		} else {
-			blockEntity.cookingProgress = 0;
-		}
-
-		// 更新方块状态
-		if (wasLit != isLit) {
-			level.setBlock(pos, state.setValue(ElectricFurnaceBlock.LIT, isLit), 3);
-		}
+		}, () -> blockEntity.data = blockEntity.data.withCookingProgress(0));
 
 		blockEntity.setChanged();
 	}
 
-
-
-	private boolean canSmelt() {
-		if (this.items.get(INPUT_SLOT).isEmpty()) {
-			return false;
-		}
-
-		SingleRecipeInput recipeInput = new SingleRecipeInput(this.items.get(INPUT_SLOT));
-		var recipe = this.level.getRecipeManager().getRecipeFor(RecipeType.SMELTING, recipeInput, this.level);
-
-		if (recipe.isEmpty()) {
-			return false;
-		}
-
-		ItemStack result = recipe.get().value().getResultItem(this.level.registryAccess());
-		ItemStack outputStack = this.items.get(OUTPUT_SLOT);
-
-		if (outputStack.isEmpty()) {
-			return true;
-		}
-
-		if (!ItemStack.isSameItemSameComponents(outputStack, result)) {
-			return false;
-		}
-
-		return outputStack.getCount() + result.getCount() <= outputStack.getMaxStackSize();
-	}
-
-	private void smeltItem() {
-		if (!canSmelt()) {
-			return;
-		}
-
-		SingleRecipeInput recipeInput = new SingleRecipeInput(this.items.get(INPUT_SLOT));
-		var recipe = this.level.getRecipeManager().getRecipeFor(RecipeType.SMELTING, recipeInput, this.level);
-
-		if (recipe.isPresent()) {
-			ItemStack result = recipe.get().value().getResultItem(this.level.registryAccess()).copy();
-			ItemStack outputStack = this.items.get(OUTPUT_SLOT);
-
-			if (outputStack.isEmpty()) {
-				this.items.set(OUTPUT_SLOT, result);
-			} else {
-				outputStack.grow(result.getCount());
-			}
-
-			this.items.get(INPUT_SLOT).shrink(1);
+	private void drop(ItemStack stack) {
+		if (!stack.isEmpty()) {
+			Containers.dropItemStack(this.level, this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ(), stack);
 		}
 	}
 
 	public void dropContents() {
 		if (this.level != null) {
-			for (ItemStack stack : this.items) {
-				if (!stack.isEmpty()) {
-					net.minecraft.world.Containers.dropItemStack(this.level, this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ(), stack);
-				}
-			}
+			drop(inputHandler.getStackInSlot(0));
+			drop(outputHandler.getStackInSlot(0));
 		}
 	}
 
@@ -198,11 +163,6 @@ public class ElectricFurnaceBlockEntity extends BaseContainerBlockEntity impleme
 		return this.electricPower;
 	}
 
-	public ContainerData getDataAccess() {
-		return this.dataAccess;
-	}
-
-	// BaseContainerBlockEntity 实现
 	@Override
 	protected Component getDefaultName() {
 		return Component.translatable("container.futureenergy.electric_furnace");
@@ -215,34 +175,49 @@ public class ElectricFurnaceBlockEntity extends BaseContainerBlockEntity impleme
 
 	@Override
 	public int getContainerSize() {
-		return this.items.size();
+		return 2;
 	}
 
 	@Override
 	public boolean isEmpty() {
-		return this.items.stream().allMatch(ItemStack::isEmpty);
+		return inputHandler.getStackInSlot(0).isEmpty() && outputHandler.getStackInSlot(0).isEmpty();
 	}
 
 	@Override
 	public ItemStack getItem(int slot) {
-		return this.items.get(slot);
+		return switch (slot) {
+			case 0 -> inputHandler.getStackInSlot(0);
+			case 1 -> outputHandler.getStackInSlot(0);
+			default -> ItemStack.EMPTY;
+		};
 	}
 
 	@Override
 	public ItemStack removeItem(int slot, int amount) {
-		return ContainerHelper.removeItem(this.items, slot, amount);
+		ItemStack result = switch (slot) {
+			case 0 -> inputHandler.extractItem(0, amount, false);
+			case 1 -> outputHandler.extractItem(0, amount, false);
+			default -> ItemStack.EMPTY;
+		};
+		setChanged();
+		return result;
 	}
 
 	@Override
 	public ItemStack removeItemNoUpdate(int slot) {
-		return ContainerHelper.takeItem(this.items, slot);
+		switch (slot) {
+			case 0 -> inputHandler.setStackInSlot(0, ItemStack.EMPTY);
+			case 1 -> outputHandler.setStackInSlot(0, ItemStack.EMPTY);
+		}
+
+		return ItemStack.EMPTY;
 	}
 
 	@Override
 	public void setItem(int slot, ItemStack stack) {
-		this.items.set(slot, stack);
-		if (stack.getCount() > this.getMaxStackSize()) {
-			stack.setCount(this.getMaxStackSize());
+		switch (slot) {
+			case 0 -> inputHandler.setStackInSlot(0, stack);
+			case 1 -> outputHandler.setStackInSlot(0, stack);
 		}
 		this.setChanged();
 	}
@@ -255,18 +230,22 @@ public class ElectricFurnaceBlockEntity extends BaseContainerBlockEntity impleme
 
 	@Override
 	public void clearContent() {
-		this.items.clear();
+		inputHandler.setStackInSlot(0, ItemStack.EMPTY);
+		outputHandler.setStackInSlot(0, ItemStack.EMPTY);
 	}
 
 	@Override
 	protected void setItems(NonNullList<ItemStack> items) {
-		this.items.clear();
-		this.items.addAll(items);
+		inputHandler.setStackInSlot(0, items.get(0));
+		outputHandler.setStackInSlot(0, items.get(1));
 	}
 
 	@Override
 	protected NonNullList<ItemStack> getItems() {
-		return this.items;
+		NonNullList<ItemStack> itemStacks = NonNullList.withSize(2, ItemStack.EMPTY);
+		itemStacks.set(0, inputHandler.getStackInSlot(0));
+		itemStacks.set(1, outputHandler.getStackInSlot(0));
+		return itemStacks;
 	}
 
 	// WorldlyContainer 实现
@@ -291,18 +270,14 @@ public class ElectricFurnaceBlockEntity extends BaseContainerBlockEntity impleme
 	@Override
 	public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
 		super.loadAdditional(tag, registries);
-		ContainerHelper.loadAllItems(tag, this.items, registries);
-		this.cookingProgress = tag.getInt("CookingProgress");
-		this.cookingTotalTime = tag.getInt("CookingTotalTime");
+		data = Data.CODEC.parse(NbtOps.INSTANCE, tag.getCompound("data")).getOrThrow(IllegalArgumentException::new);
 		this.electricPower.readFromNBT(tag);
 	}
 
 	@Override
 	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
 		super.saveAdditional(tag, registries);
-		ContainerHelper.saveAllItems(tag, this.items, registries);
-		tag.putInt("CookingProgress", this.cookingProgress);
-		tag.putInt("CookingTotalTime", this.cookingTotalTime);
+		tag.put("data", Data.CODEC.encodeStart(NbtOps.INSTANCE, data).getOrThrow(IllegalArgumentException::new));
 		this.electricPower.writeToNBT(tag);
 	}
 }
