@@ -9,4 +9,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 public class BlockList {
 	public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(FutureEnergy.MODID);
+
+	public static final DeferredBlock<InductionFurnaceBlock> INDUCTION_FURNACE =
+		BLOCKS.register("induction_furnace", InductionFurnaceBlock::new);
 }

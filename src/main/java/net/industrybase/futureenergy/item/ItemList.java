@@ -10,4 +10,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 public class ItemList {
 	public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(FutureEnergy.MODID);
+
+	public static final DeferredItem<BlockItem> INDUCTION_FURNACE =
+		ITEMS.registerSimpleBlockItem(BlockList.INDUCTION_FURNACE);
 }
