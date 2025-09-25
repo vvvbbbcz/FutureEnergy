@@ -14,6 +14,9 @@ public class ItemList {
 	public static final DeferredItem<CrucibleTongsItem> CRUCIBLE_TONGS =
 		ITEMS.register("crucible_tongs", CrucibleTongsItem::new);
 
+	public static final DeferredItem<CeramicCrucibleItem> CERAMIC_CRUCIBLE =
+		ITEMS.register("ceramic_crucible", CeramicCrucibleItem::new);
+
 	public static final DeferredItem<BlockItem> INDUCTION_FURNACE =
 		ITEMS.registerSimpleBlockItem(BlockList.INDUCTION_FURNACE);
 }
