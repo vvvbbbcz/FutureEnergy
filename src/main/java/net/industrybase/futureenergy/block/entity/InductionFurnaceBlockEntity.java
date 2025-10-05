@@ -25,10 +25,14 @@ public class InductionFurnaceBlockEntity extends BaseContainerBlockEntity {
 	@Nullable
 	private static volatile LinkedHashMap<Item, MetalInfo> metalCache;
 	private int[] burnTimes = new int[4];
-	private ContainerData data = new ContainerData() {
+	private final ContainerData data = new ContainerData() {
 		@Override
 		public int get(int index) {
-			return 0;
+			return switch (index) {
+				case 0, 1, 2, 3 -> burnTimes[index] / 100;
+				case 4 -> (int) (oldPower * 100.0);
+				default -> 0;
+			};
 		}
 
 		@Override
@@ -38,7 +42,7 @@ public class InductionFurnaceBlockEntity extends BaseContainerBlockEntity {
 
 		@Override
 		public int getCount() {
-			return 1;
+			return 5;
 		}
 	};
 
