@@ -14,19 +14,25 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 public class InductionFurnaceBlock extends BaseEntityBlock {
 	public static final MapCodec<InductionFurnaceBlock> CODEC = simpleCodec((properties) -> new InductionFurnaceBlock());
+	public static final BooleanProperty LIT = BlockStateProperties.LIT;
 
 	protected InductionFurnaceBlock() {
 		super(Properties.ofFullCopy(Blocks.IRON_BLOCK));
+		this.registerDefaultState(this.stateDefinition.any().setValue(LIT, false));
 	}
 
 	@Override
@@ -69,6 +75,11 @@ public class InductionFurnaceBlock extends BaseEntityBlock {
 	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
 		ElectricHelper.updateOnRemove(level, state, newState, pos);
 		super.onRemove(state, level, pos, newState, isMoving);
+	}
+
+	@Override
+	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+		builder.add(LIT);
 	}
 
 	@Override
