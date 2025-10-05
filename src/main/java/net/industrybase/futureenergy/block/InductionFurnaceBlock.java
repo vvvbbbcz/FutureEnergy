@@ -59,7 +59,7 @@ public class InductionFurnaceBlock extends BaseEntityBlock {
 					} else {
 						if (stack.getItem() instanceof ICrucible) {
 							player.setItemInHand(InteractionHand.MAIN_HAND, furnaceBE.getItem(0));
-							furnaceBE.setItem(0, stack);
+							furnaceBE.setItem(4, stack);
 							furnaceBE.setChanged();
 
 							return InteractionResult.CONSUME;

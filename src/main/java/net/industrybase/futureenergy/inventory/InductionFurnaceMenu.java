@@ -15,7 +15,7 @@ public class InductionFurnaceMenu extends AbstractContainerMenu {
 	private final ContainerData data;
 
 	public InductionFurnaceMenu(int containerId, Inventory playerInventory) {
-		this(containerId, playerInventory, new SimpleContainer(4), new SimpleContainerData(1));
+		this(containerId, playerInventory, new SimpleContainer(5), new SimpleContainerData(1));
 	}
 
 	public InductionFurnaceMenu(int containerId, Inventory playerInventory, Container container, ContainerData data) {
@@ -23,7 +23,7 @@ public class InductionFurnaceMenu extends AbstractContainerMenu {
 		this.container = container;
 		this.data = data;
 
-		checkContainerSize(container, 4);
+		checkContainerSize(container, 5);
 		checkContainerDataCount(data, 1);
 
 		// add player inventory

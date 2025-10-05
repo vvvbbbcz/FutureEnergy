@@ -21,7 +21,10 @@ import javax.annotation.Nullable;
 
 public class InductionFurnaceBlockEntity extends BaseContainerBlockEntity {
 	private final ElectricPower electricPower = new ElectricPower(this);
-	private NonNullList<ItemStack> items = NonNullList.withSize(4, ItemStack.EMPTY);
+	private NonNullList<ItemStack> items = NonNullList.withSize(5, ItemStack.EMPTY);
+	@Nullable
+	private static volatile LinkedHashMap<Item, MetalInfo> metalCache;
+	private int[] burnTimes = new int[4];
 	private ContainerData data = new ContainerData() {
 		@Override
 		public int get(int index) {
