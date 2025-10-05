@@ -1,7 +1,9 @@
 package net.industrybase.futureenergy.block.entity;
 
 import net.industrybase.api.electric.ElectricPower;
+import net.industrybase.futureenergy.block.InductionFurnaceBlock;
 import net.industrybase.futureenergy.inventory.InductionFurnaceMenu;
+import net.industrybase.futureenergy.item.ICrucible;
 import net.industrybase.futureenergy.util.ComponentHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -23,6 +25,8 @@ import javax.annotation.Nullable;
 import java.util.LinkedHashMap;
 
 public class InductionFurnaceBlockEntity extends BaseContainerBlockEntity {
+	public static final int MAX_POWER = 30;
+	private int oldPower = 0;
 	private final ElectricPower electricPower = new ElectricPower(this);
 	private NonNullList<ItemStack> items = NonNullList.withSize(5, ItemStack.EMPTY);
 	@Nullable
@@ -79,7 +83,7 @@ public class InductionFurnaceBlockEntity extends BaseContainerBlockEntity {
 		map.put(Items.COPPER_INGOT, new MetalInfo(200, 133, Metal.COPPER));
 	}
 
-	public static void serverTick(Level level, BlockPos pos, BlockState state, InductionFurnaceBlockEntity blockEntity) {
+	public static void serverTick(Level level, BlockPos pos, BlockState state, InductionFurnaceBlockEntity BE) {
 		boolean changed = false;
 		boolean lit = BE.isLit();
 
@@ -154,12 +158,20 @@ public class InductionFurnaceBlockEntity extends BaseContainerBlockEntity {
 	protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
 		super.loadAdditional(tag, registries);
 		this.electricPower.readFromNBT(tag);
+
+		this.oldPower = tag.getInt("OldPower");
+
+		int[] litTimes = tag.getIntArray("BurnTimes");
+		if (litTimes.length == this.burnTimes.length)
+			this.burnTimes = litTimes;
 	}
 
 	@Override
 	protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
 		super.saveAdditional(tag, registries);
 		this.electricPower.writeToNBT(tag);
+		tag.putInt("OldPower", this.oldPower);
+		tag.putIntArray("BurnTimes", this.burnTimes);
 	}
 
 	@Override
