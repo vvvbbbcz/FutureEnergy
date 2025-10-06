@@ -8,6 +8,8 @@ import net.industrybase.futureenergy.item.ICrucible;
 import net.industrybase.futureenergy.item.ItemList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -16,6 +18,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -24,6 +28,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 public class InductionFurnaceBlock extends BaseEntityBlock {
@@ -58,8 +63,9 @@ public class InductionFurnaceBlock extends BaseEntityBlock {
 						}
 					} else {
 						if (stack.getItem() instanceof ICrucible) {
-							player.setItemInHand(InteractionHand.MAIN_HAND, furnaceBE.getItem(0));
-							furnaceBE.setItem(4, stack);
+							if (!player.getAbilities().instabuild)
+								player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+							furnaceBE.setItem(4, stack.copy());
 							furnaceBE.setChanged();
 
 							return InteractionResult.CONSUME;
@@ -74,6 +80,17 @@ public class InductionFurnaceBlock extends BaseEntityBlock {
 	@Override
 	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
 		ElectricHelper.updateOnRemove(level, state, newState, pos);
+
+		if (!state.is(newState.getBlock())) {
+			BlockEntity blockentity = level.getBlockEntity(pos);
+			if (blockentity instanceof InductionFurnaceBlockEntity furnaceBE) {
+				if (!level.isClientSide) {
+					Containers.dropContents(level, pos, furnaceBE);
+				}
+				level.updateNeighbourForOutputSignal(pos, this);
+			}
+		}
+
 		super.onRemove(state, level, pos, newState, isMoving);
 	}
 
@@ -90,6 +107,11 @@ public class InductionFurnaceBlock extends BaseEntityBlock {
 	@Override
 	public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
 		return new InductionFurnaceBlockEntity(pos, state);
+	}
+
+	@Override
+	protected RenderShape getRenderShape(BlockState state) {
+		return RenderShape.MODEL;
 	}
 
 	@Nullable
