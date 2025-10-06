@@ -5,7 +5,7 @@ import net.minecraft.world.item.Item;
 
 public class CeramicCrucibleItem extends Item implements ICrucible {
 	public CeramicCrucibleItem() {
-		super(new Properties());
+		super(new Properties().stacksTo(1));
 	}
 
 	@Override
